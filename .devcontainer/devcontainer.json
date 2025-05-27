@@ -1,0 +1,19 @@
+{
+  "name": "SAAS Website Builder",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  },
+  "forwardPorts": [3000, 3001, 54321, 54322],
+  "postCreateCommand": "npm install",
+  "postStartCommand": "echo 'Run npm run dev to start the server'"
+}

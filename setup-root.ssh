@@ -1,0 +1,1633 @@
+#!/bin/bash
+
+# 🚀 SAAS Website Builder - Complete Setup Script for GitHub Codespaces (Root Directory)
+# Fixed version with all corrections for seamless Codespaces integration
+
+set -e  # Exit on any error
+
+echo "
+╔══════════════════════════════════════════════════════════════╗
+║     🚀 SAAS Website Builder - Root Setup Script 🚀           ║
+║                                                              ║
+║  This script will:                                           ║
+║  1. Initialize Next.js project in root directory            ║
+║  2. Install all dependencies                                 ║
+║  3. Set up complete project structure                       ║
+║  4. Configure security (.gitignore, env files)              ║
+║  5. Create all components and API routes                    ║
+║  6. Set up Codespaces-specific configurations              ║
+╚══════════════════════════════════════════════════════════════╝
+"
+
+# Check if we're in Codespaces
+if [ -n "$CODESPACE_NAME" ]; then
+    echo "✅ Running in GitHub Codespaces environment"
+    CODESPACES_URL="https://${CODESPACE_NAME}-3000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+    echo "🌐 Your app will be available at: $CODESPACES_URL"
+else
+    echo "📍 Running in local environment"
+    CODESPACES_URL="http://localhost:3000"
+fi
+
+# Check Node.js version
+echo ""
+echo "🔍 Checking Node.js environment..."
+node --version
+npm --version
+
+# Check if package.json already exists
+if [ -f "package.json" ]; then
+    echo "⚠️  Existing package.json found. Backing up existing files..."
+    mkdir -p .backup
+    cp package.json .backup/package.json.bak 2>/dev/null || true
+    cp -r app .backup/app.bak 2>/dev/null || true
+    cp -r components .backup/components.bak 2>/dev/null || true
+fi
+
+# Step 1: Initialize package.json
+echo ""
+echo "📦 Step 1: Initializing package.json..."
+
+cat > package.json << 'PACKAGE_EOF'
+{
+  "name": "saas-website-builder",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
+PACKAGE_EOF
+
+# Step 2: Create security files (.gitignore) - with node_modules included
+echo ""
+echo "🔒 Step 2: Setting up security files..."
+cat > .gitignore << 'GITIGNORE_EOF'
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Testing
+/coverage
+/.nyc_output
+
+# Next.js
+/.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+# Production
+/dist
+
+# Misc
+.DS_Store
+*.pem
+Thumbs.db
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+.env.development
+.env.test
+.env.production
+.env.staging
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+
+# Supabase
+**/supabase/.branches
+**/supabase/.temp
+**/supabase/.env
+.supabase/
+
+# Stripe
+stripe.exe
+stripe-cli/
+
+# Security & Secrets
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.csr
+*.der
+*.priv
+secrets/
+private/
+.secrets/
+config/secrets/
+credentials.json
+service-account*.json
+
+# API Keys and Tokens
+**/api_keys/
+**/tokens/
+.api_keys
+.tokens
+auth_config.json
+oauth_config.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+!**/supabase/migrations/*.sql
+!**/supabase/schema.sql
+postgres-data/
+mysql-data/
+redis-data/
+
+# IDE and Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+.npm/
+.yarn-integrity
+
+# Cache
+.cache/
+.parcel-cache/
+.next/cache/
+.eslintcache
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+tmp/
+temp/
+
+# Build outputs
+dist/
+build/
+out/
+generated/
+compiled/
+
+# Test files
+test-results/
+playwright-report/
+cypress/screenshots/
+cypress/videos/
+
+# Upload directories
+uploads/
+public/uploads/
+user-uploads/
+tenant-uploads/
+
+# Local development
+.local/
+*.local.*
+dev-data/
+
+# Custom project patterns
+preview-cache/
+tenant-cache/
+customer-data/
+billing-data/
+admin-uploads/
+backup-exports/
+
+# Backup directory
+.backup/
+
+# Keep important files
+!.gitkeep
+!README.md
+!.env.example
+!.env.local.example
+GITIGNORE_EOF
+
+
+# Step 3: Install Next.js and core dependencies
+echo ""
+echo "📦 Step 3: Installing Next.js and core dependencies..."
+npm install next@latest react@latest react-dom@latest
+npm install -g npm@11.4.1
+
+# Install dev dependencies - FIXED with @tailwindcss/postcss
+echo "📦 Installing dev dependencies..."
+npm install --save-dev typescript @types/react @types/node @types/react-dom
+npm install --save-dev tailwindcss@^3.4.0 postcss autoprefixer
+npm install --save-dev eslint eslint-config-next
+
+# Step 4: Initialize configurations
+echo ""
+echo "⚙️  Step 4: Initializing configurations..."
+
+# Create next.config.js with proper Codespaces domains
+cat > next.config.js << 'NEXT_CONFIG_EOF'
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  images: {
+    domains: [
+      'localhost',
+      '*.github.dev',
+      '*.app.github.dev',
+      'images.unsplash.com',
+      'source.unsplash.com'
+    ],
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+        ],
+      },
+    ];
+  },
+}
+
+module.exports = nextConfig
+NEXT_CONFIG_EOF
+
+# Initialize Tailwind CSS manually
+echo "🎨 Initializing Tailwind CSS..."
+
+cat > tailwind.config.js << 'TAILWIND_EOF'
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+TAILWIND_EOF
+
+# FIXED PostCSS config with @tailwindcss/postcss
+cat > postcss.config.js << 'POSTCSS_EOF'
+module.exports = {
+  plugins: {
+    '@tailwindcss/postcss': {},
+    autoprefixer: {},
+  },
+}
+POSTCSS_EOF
+
+# Create TypeScript config
+cat > tsconfig.json << 'TS_EOF'
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+TS_EOF
+
+# Step 5: Create app directory structure
+echo ""
+echo "📁 Step 5: Creating app directory and files..."
+
+mkdir -p app
+mkdir -p public
+mkdir -p styles
+
+# Create globals.css
+cat > app/globals.css << 'CSS_EOF'
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+CSS_EOF
+
+# Create layout.tsx
+cat > app/layout.tsx << 'LAYOUT_EOF'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata: Metadata = {
+  title: 'SAAS Website Builder',
+  description: 'Build beautiful websites in minutes',
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>{children}</body>
+    </html>
+  )
+}
+LAYOUT_EOF
+
+# Create temporary home page
+cat > app/page.tsx << 'PAGE_EOF'
+export default function Home() {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center p-24">
+      <h1 className="text-4xl font-bold">SAAS Website Builder</h1>
+      <p className="mt-4 text-gray-600">Setup in progress...</p>
+    </main>
+  )
+}
+PAGE_EOF
+
+# Step 6: Install additional dependencies - FIXED removed deprecated packages
+echo ""
+echo "📦 Step 6: Installing additional dependencies..."
+npm install @supabase/supabase-js@latest @supabase/ssr@latest
+npm install stripe@latest @stripe/stripe-js@latest
+npm install lucide-react@latest
+npm install openai@latest
+npm install react-colorful@latest
+npm install framer-motion@latest
+npm install @tiptap/react@latest @tiptap/starter-kit@latest
+npm install react-hot-toast@latest
+npm install zustand@latest
+npm install @vercel/analytics@latest
+
+# Step 7: Create complete project structure
+echo ""
+echo "📁 Step 7: Creating complete project structure..."
+mkdir -p app/admin/preview
+mkdir -p app/api/webhooks/stripe
+mkdir -p app/api/preview/generate
+mkdir -p app/api/ai
+mkdir -p "app/[domain]"
+mkdir -p "app/preview/[token]"
+mkdir -p components/admin
+mkdir -p components/preview
+mkdir -p components/shared
+mkdir -p components/editor
+mkdir -p components/templates/industries
+mkdir -p components/tenant
+mkdir -p lib/supabase
+mkdir -p lib/stripe
+mkdir -p lib/utils
+mkdir -p hooks
+mkdir -p types
+mkdir -p public/templates
+mkdir -p supabase/migrations
+mkdir -p scripts
+mkdir -p .devcontainer
+
+
+# Step 8: Create environment files
+echo ""
+echo "🔐 Step 8: Creating environment files..."
+cat > .env.example << 'ENV_EOF'
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+
+# Stripe Configuration
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your-key-here
+STRIPE_SECRET_KEY=sk_test_your-key-here
+STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret-here
+
+# OpenAI Configuration
+OPENAI_API_KEY=sk-your-openai-key-here
+
+# Application Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_ROOT_DOMAIN=localhost:3000
+
+# Email Configuration (optional)
+EMAIL_SERVER_HOST=smtp.example.com
+EMAIL_SERVER_PORT=587
+EMAIL_SERVER_USER=your-email@example.com
+EMAIL_SERVER_PASSWORD=your-email-password
+EMAIL_FROM=noreply@example.com
+ENV_EOF
+
+# Create .env.local with Codespaces URLs if in Codespaces
+if [ -n "$CODESPACE_NAME" ]; then
+    cat > .env.local << ENV_LOCAL_EOF
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Stripe Configuration
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+
+# OpenAI Configuration
+OPENAI_API_KEY=your_openai_api_key
+
+# Application Configuration - Auto-configured for Codespaces
+NEXT_PUBLIC_APP_URL=$CODESPACES_URL
+NEXT_PUBLIC_ROOT_DOMAIN=${CODESPACE_NAME}-3000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}
+ENV_LOCAL_EOF
+else
+    cp .env.example .env.local
+fi
+
+# Step 9: Create Admin Preview Tool Component with HTML fix
+echo ""
+echo "🎨 Step 9: Creating Admin Preview Tool component..."
+cat > components/admin/AdminPreviewTool.tsx << 'COMPONENT_EOF'
+import React, { useState, useEffect } from 'react';
+import { Wand2, Eye, Copy, Check, Loader2, Building2, Phone, Mail, MapPin, Globe, Palette, Type, Image, Sparkles } from 'lucide-react';
+
+const AdminPreviewTool = () => {
+  const [previewData, setPreviewData] = useState({
+    businessName: '',
+    industry: '',
+    phone: '',
+    email: '',
+    address: '',
+    tagline: '',
+    primaryColor: '#3B82F6',
+    accentColor: '#10B981',
+    description: '',
+    services: [],
+    heroImage: 'modern-office',
+    fontPair: 'modern'
+  });
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [generatedContent, setGeneratedContent] = useState(null);
+
+  const industries = [
+    { value: 'dentist', label: 'Dental Practice', icon: '🦷' },
+    { value: 'real_estate', label: 'Real Estate', icon: '🏡' },
+    { value: 'restaurant', label: 'Restaurant', icon: '🍽️' },
+    { value: 'law_firm', label: 'Law Firm', icon: '⚖️' },
+    { value: 'fitness', label: 'Fitness/Gym', icon: '💪' },
+    { value: 'salon', label: 'Beauty Salon', icon: '💇‍♀️' },
+    { value: 'auto_repair', label: 'Auto Repair', icon: '🚗' },
+    { value: 'medical', label: 'Medical Clinic', icon: '🏥' },
+    { value: 'accounting', label: 'Accounting', icon: '📊' },
+    { value: 'photography', label: 'Photography', icon: '📸' }
+  ];
+
+  const colorSchemes = {
+    dentist: { primary: '#00A6FB', accent: '#00D9FF' },
+    real_estate: { primary: '#2E5266', accent: '#6E8898' },
+    restaurant: { primary: '#D32F2F', accent: '#FF6659' },
+    law_firm: { primary: '#1A237E', accent: '#283593' },
+    fitness: { primary: '#FF6B35', accent: '#F7931E' },
+    salon: { primary: '#E91E63', accent: '#F06292' },
+    auto_repair: { primary: '#424242', accent: '#FF9800' },
+    medical: { primary: '#0288D1', accent: '#03A9F4' },
+    accounting: { primary: '#00695C', accent: '#00897B' },
+    photography: { primary: '#5E35B1', accent: '#7E57C2' }
+  };
+
+  const fontPairs = [
+    { value: 'modern', label: 'Modern', heading: 'Inter', body: 'Inter' },
+    { value: 'elegant', label: 'Elegant', heading: 'Playfair Display', body: 'Lato' },
+    { value: 'professional', label: 'Professional', heading: 'Montserrat', body: 'Open Sans' },
+    { value: 'friendly', label: 'Friendly', heading: 'Poppins', body: 'Source Sans Pro' },
+    { value: 'bold', label: 'Bold', heading: 'Bebas Neue', body: 'Roboto' }
+  ];
+
+  const heroImages = [
+    { value: 'modern-office', label: 'Modern Office' },
+    { value: 'professional-team', label: 'Professional Team' },
+    { value: 'abstract-gradient', label: 'Abstract Gradient' },
+    { value: 'industry-specific', label: 'Industry Specific' }
+  ];
+
+  // Mock AI content generation
+  const generateAIContent = async () => {
+    setIsGenerating(true);
+    
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const industryContent = {
+      dentist: {
+        tagline: "Your Smile, Our Passion",
+        description: "Experience exceptional dental care in a comfortable, modern environment. Our team of skilled professionals is dedicated to helping you achieve optimal oral health.",
+        services: [
+          "General Dentistry",
+          "Cosmetic Dentistry", 
+          "Orthodontics",
+          "Oral Surgery",
+          "Teeth Whitening",
+          "Dental Implants"
+        ]
+      },
+      real_estate: {
+        tagline: "Finding Your Dream Home",
+        description: "Your trusted partner in real estate. We combine local expertise with cutting-edge technology to help you buy, sell, or invest in properties with confidence.",
+        services: [
+          "Residential Sales",
+          "Commercial Properties",
+          "Property Management",
+          "Investment Consulting",
+          "Market Analysis",
+          "Home Staging"
+        ]
+      },
+      restaurant: {
+        tagline: "Where Flavor Meets Tradition",
+        description: "Discover an unforgettable dining experience. Our chef-crafted menu features fresh, locally-sourced ingredients prepared with passion and served with pride.",
+        services: [
+          "Dine-In Service",
+          "Takeout & Delivery",
+          "Private Events",
+          "Catering Services",
+          "Wine Pairing",
+          "Chef's Table"
+        ]
+      },
+      law_firm: {
+        tagline: "Justice Through Excellence",
+        description: "Dedicated legal professionals committed to protecting your rights and interests. We provide comprehensive legal services with integrity and expertise.",
+        services: [
+          "Corporate Law",
+          "Family Law",
+          "Criminal Defense",
+          "Estate Planning",
+          "Personal Injury",
+          "Employment Law"
+        ]
+      },
+      fitness: {
+        tagline: "Transform Your Body, Transform Your Life",
+        description: "State-of-the-art fitness facility offering personalized training, group classes, and cutting-edge equipment to help you reach your health and fitness goals.",
+        services: [
+          "Personal Training",
+          "Group Fitness Classes",
+          "Nutritional Counseling",
+          "Yoga & Pilates",
+          "Strength Training",
+          "Cardio Programs"
+        ]
+      }
+    };
+
+    const content = industryContent[previewData.industry] || industryContent.dentist;
+    
+    setGeneratedContent(content);
+    setPreviewData(prev => ({
+      ...prev,
+      tagline: content.tagline,
+      description: content.description,
+      services: content.services
+    }));
+
+    // Generate preview URL
+    const subdomain = previewData.businessName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    setPreviewUrl(`https://${subdomain}-preview.yourdomain.com`);
+
+    setIsGenerating(false);
+  };
+
+  const handleIndustryChange = (industry) => {
+    setPreviewData(prev => ({
+      ...prev,
+      industry,
+      primaryColor: colorSchemes[industry]?.primary || '#3B82F6',
+      accentColor: colorSchemes[industry]?.accent || '#10B981'
+    }));
+  };
+
+  const copyPreviewUrl = () => {
+    navigator.clipboard.writeText(previewUrl);
+    setCopiedUrl(true);
+    setTimeout(() => setCopiedUrl(false), 2000);
+  };
+
+  const savePreview = async () => {
+    // Here you would save to Supabase
+    console.log('Saving preview data:', previewData);
+    alert('Preview saved! This would save to Supabase in production.');
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Preview Generator</h1>
+          <p className="text-gray-600">Create instant website previews for potential clients</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Input Form */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Business Information</h2>
+            
+            <div className="space-y-4">
+              {/* Business Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <Building2 className="inline w-4 h-4 mr-1" />
+                  Business Name *
+                </label>
+                <input
+                  type="text"
+                  value={previewData.businessName}
+                  onChange={(e) => setPreviewData(prev => ({ ...prev, businessName: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Smith Family Dental"
+                />
+              </div>
+
+              {/* Industry */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Industry *
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {industries.map((ind) => (
+                    <button
+                      key={ind.value}
+                      onClick={() => handleIndustryChange(ind.value)}
+                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        previewData.industry === ind.value
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <span className="mr-2">{ind.icon}</span>
+                      {ind.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <Phone className="inline w-4 h-4 mr-1" />
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={previewData.phone}
+                    onChange={(e) => setPreviewData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <Mail className="inline w-4 h-4 mr-1" />
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={previewData.email}
+                    onChange={(e) => setPreviewData(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="info@business.com"
+                  />
+                </div>
+              </div>
+
+              {/* Address */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <MapPin className="inline w-4 h-4 mr-1" />
+                  Address
+                </label>
+                <input
+                  type="text"
+                  value={previewData.address}
+                  onChange={(e) => setPreviewData(prev => ({ ...prev, address: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="123 Main St, City, State 12345"
+                />
+              </div>
+
+              {/* Design Options */}
+              <div className="border-t pt-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Design Options</h3>
+                
+                {/* Colors */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <Palette className="inline w-4 h-4 mr-1" />
+                      Primary Color
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="color"
+                        value={previewData.primaryColor}
+                        onChange={(e) => setPreviewData(prev => ({ ...prev, primaryColor: e.target.value }))}
+                        className="h-10 w-20 border border-gray-300 rounded cursor-pointer"
+                      />
+                      <span className="text-sm text-gray-600">{previewData.primaryColor}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <Palette className="inline w-4 h-4 mr-1" />
+                      Accent Color
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="color"
+                        value={previewData.accentColor}
+                        onChange={(e) => setPreviewData(prev => ({ ...prev, accentColor: e.target.value }))}
+                        className="h-10 w-20 border border-gray-300 rounded cursor-pointer"
+                      />
+                      <span className="text-sm text-gray-600">{previewData.accentColor}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Font Pair */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <Type className="inline w-4 h-4 mr-1" />
+                    Typography
+                  </label>
+                  <select
+                    value={previewData.fontPair}
+                    onChange={(e) => setPreviewData(prev => ({ ...prev, fontPair: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {fontPairs.map(pair => (
+                      <option key={pair.value} value={pair.value}>
+                        {pair.label} ({pair.heading} + {pair.body})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Hero Image */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <Image className="inline w-4 h-4 mr-1" />
+                    Hero Image Style
+                  </label>
+                  <select
+                    value={previewData.heroImage}
+                    onChange={(e) => setPreviewData(prev => ({ ...prev, heroImage: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {heroImages.map(img => (
+                      <option key={img.value} value={img.value}>{img.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Generate Button */}
+              <button
+                onClick={generateAIContent}
+                disabled={!previewData.businessName || !previewData.industry || isGenerating}
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-md font-medium hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="animate-spin w-5 h-5 mr-2" />
+                    Generating AI Content...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    Generate AI Content & Preview
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Preview Panel */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Generated Content</h2>
+            
+            {generatedContent ? (
+              <div className="space-y-4">
+                {/* Tagline */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tagline</label>
+                  <input
+                    type="text"
+                    value={previewData.tagline}
+                    onChange={(e) => setPreviewData(prev => ({ ...prev, tagline: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    value={previewData.description}
+                    onChange={(e) => setPreviewData(prev => ({ ...prev, description: e.target.value }))}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Services */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Services</label>
+                  <div className="space-y-2">
+                    {previewData.services.map((service, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <input
+                          type="text"
+                          value={service}
+                          onChange={(e) => {
+                            const newServices = [...previewData.services];
+                            newServices[index] = e.target.value;
+                            setPreviewData(prev => ({ ...prev, services: newServices }));
+                          }}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <button
+                          onClick={() => {
+                            const newServices = previewData.services.filter((_, i) => i !== index);
+                            setPreviewData(prev => ({ ...prev, services: newServices }));
+                          }}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => setPreviewData(prev => ({ ...prev, services: [...prev.services, ''] }))}
+                      className="text-blue-500 hover:text-blue-700 text-sm font-medium"
+                    >
+                      + Add Service
+                    </button>
+                  </div>
+                </div>
+
+                {/* Preview URL */}
+                {previewUrl && (
+                  <div className="border-t pt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <Globe className="inline w-4 h-4 mr-1" />
+                      Preview URL
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={previewUrl}
+                        readOnly
+                        className="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md"
+                      />
+                      <button
+                        onClick={copyPreviewUrl}
+                        className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                      >
+                        {copiedUrl ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    onClick={savePreview}
+                    className="flex-1 bg-green-500 text-white py-2 px-4 rounded-md font-medium hover:bg-green-600 transition-colors"
+                  >
+                    Save Preview
+                  </button>
+                  <a
+                    href={previewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 bg-gray-800 text-white py-2 px-4 rounded-md font-medium hover:bg-gray-900 transition-colors flex items-center justify-center"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    View Preview
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <Wand2 className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                <p>Fill in business details and generate content to see preview</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-4 gap-4 mt-6">
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <h3 className="text-sm font-medium text-gray-600">Active Previews</h3>
+            <p className="text-2xl font-bold text-gray-900 mt-1">12</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <h3 className="text-sm font-medium text-gray-600">Converted This Month</h3>
+            <p className="text-2xl font-bold text-green-600 mt-1">3</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <h3 className="text-sm font-medium text-gray-600">Conversion Rate</h3>
+            <p className="text-2xl font-bold text-blue-600 mt-1">25%</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-4">
+            <h3 className="text-sm font-medium text-gray-600">Templates Available</h3>
+            <p className="text-2xl font-bold text-purple-600 mt-1">10</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminPreviewTool;
+COMPONENT_EOF
+
+# Step 10: Create core application files
+echo ""
+echo "📝 Step 10: Creating core application files..."
+
+# Create Supabase client
+cat > lib/supabase/client.ts << 'EOF'
+import { createBrowserClient } from '@supabase/ssr'
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
+EOF
+
+# Create FIXED middleware that handles both Codespaces and localhost properly
+cat > middleware.ts << 'EOF'
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export async function middleware(request: NextRequest) {
+  const url = request.nextUrl;
+  const hostname = request.headers.get('host') || '';
+  
+  // Skip middleware for localhost access in Codespaces
+  if (hostname.includes('localhost') && process.env.CODESPACE_NAME) {
+    return NextResponse.next();
+  }
+  
+  // In Codespaces (using the public URL), use path-based routing
+  const isCodespaces = hostname.includes('github.dev') || hostname.includes('app.github.dev');
+  
+  if (isCodespaces) {
+    if (url.pathname.startsWith('/preview-site/')) {
+      const token = url.pathname.split('/')[2];
+      url.pathname = `/preview/${token}`;
+      return NextResponse.rewrite(url);
+    }
+    
+    if (url.pathname.startsWith('/site/')) {
+      const tenant = url.pathname.split('/')[2];
+      url.pathname = `/${tenant}${url.pathname.substring(`/site/${tenant}`.length)}`;
+      return NextResponse.rewrite(url);
+    }
+  } else {
+    // Handle subdomain routing for production
+    if (hostname.includes('-preview.')) {
+      const subdomain = hostname.split('.')[0];
+      const token = subdomain.replace('-preview', '');
+      url.pathname = `/preview/${token}${url.pathname}`;
+      return NextResponse.rewrite(url);
+    }
+    
+    const currentHost = hostname
+      .replace(`.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`, '')
+      .replace('localhost:3000', '')
+      .replace('localhost:3001', '');
+      
+    if (currentHost && currentHost !== 'admin' && currentHost !== 'app' && !currentHost.includes('localhost')) {
+      url.pathname = `/${currentHost}${url.pathname}`;
+      return NextResponse.rewrite(url);
+    }
+  }
+  
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+};
+EOF
+
+# Create admin preview page
+cat > app/admin/preview/page.tsx << 'EOF'
+'use client';
+
+import AdminPreviewTool from '@/components/admin/AdminPreviewTool';
+
+export default function AdminPreviewPage() {
+  return <AdminPreviewTool />;
+}
+EOF
+
+# Create Supabase schema
+cat > supabase/schema.sql << 'EOF'
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Tenants table
+CREATE TABLE tenants (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  subdomain TEXT UNIQUE NOT NULL,
+  custom_domain TEXT UNIQUE,
+  business_name TEXT NOT NULL,
+  industry_template_id TEXT NOT NULL,
+  stripe_customer_id TEXT,
+  subscription_status TEXT DEFAULT 'preview',
+  settings JSONB DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Industry templates table
+CREATE TABLE industry_templates (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  default_components JSONB NOT NULL,
+  default_theme JSONB NOT NULL,
+  seo_defaults JSONB DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Components table
+CREATE TABLE components (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  content JSONB NOT NULL,
+  settings JSONB DEFAULT '{}',
+  order_index INTEGER NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Pages table
+CREATE TABLE pages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  slug TEXT NOT NULL,
+  meta_title TEXT,
+  meta_description TEXT,
+  components UUID[] DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(tenant_id, slug)
+);
+
+-- Preview sites table
+CREATE TABLE preview_sites (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  preview_token TEXT UNIQUE NOT NULL,
+  business_data JSONB NOT NULL,
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  converted_to_tenant_id UUID REFERENCES tenants(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes
+CREATE INDEX idx_tenants_subdomain ON tenants(subdomain);
+CREATE INDEX idx_tenants_custom_domain ON tenants(custom_domain);
+CREATE INDEX idx_components_tenant_id ON components(tenant_id);
+CREATE INDEX idx_pages_tenant_id ON pages(tenant_id);
+
+-- Enable Row Level Security
+ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE components ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE preview_sites ENABLE ROW LEVEL SECURITY;
+EOF
+
+# Update Next.js config
+cat > next.config.js << 'EOF'
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  images: {
+    domains: [
+      'localhost',
+      '*.github.dev',
+      '*.app.github.dev',
+      'images.unsplash.com',
+      'source.unsplash.com'
+    ],
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+        ],
+      },
+    ];
+  },
+}
+
+module.exports = nextConfig
+EOF
+
+# Create FIXED devcontainer config without problematic features
+cat > .devcontainer/devcontainer.json << 'EOF'
+{
+  "name": "SAAS Website Builder",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  },
+  "forwardPorts": [3000, 3001, 54321, 54322],
+  "postCreateCommand": "npm install",
+  "postStartCommand": "echo 'Run npm run dev to start the server'"
+}
+EOF
+
+# Create Supabase config
+cat > supabase/config.toml << 'EOF'
+project_id = "saas-website-builder"
+
+[api]
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+port = 54323
+
+[inbucket]
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+file_size_limit = "50MiB"
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+EOF
+
+# Step 11: Create security files
+echo ""
+echo "🔒 Step 11: Creating security files..."
+
+# Create security checklist
+cat > SECURITY_CHECKLIST.md << 'EOF'
+# Security Checklist for SAAS Website Builder
+
+## Before Committing Code
+- [ ] Never commit `.env.local` or any `.env` files with real values
+- [ ] All sensitive values are in environment variables
+- [ ] No API keys in code
+- [ ] No hardcoded passwords
+- [ ] No database credentials in code
+
+## Production Deployment
+- [ ] Use environment variables service (Vercel)
+- [ ] Enable HTTPS everywhere
+- [ ] Enable Row Level Security (RLS) in Supabase
+- [ ] Use Stripe's hosted checkout
+- [ ] Enable email verification
+
+## Regular Maintenance
+- [ ] Review access logs
+- [ ] Update dependencies monthly
+- [ ] Run `npm audit` regularly
+EOF
+
+# Create check-secrets script
+cat > scripts/check-secrets.sh << 'EOF'
+#!/bin/bash
+
+echo "🔍 Checking for potential secrets in code..."
+
+patterns=(
+    "sk_test_"
+    "sk_live_"
+    "pk_test_"
+    "pk_live_"
+    "whsec_"
+    "eyJhbGciOiJ"
+    "AIza"
+    "sk-"
+)
+
+found_issues=0
+
+for pattern in "${patterns[@]}"; do
+    if git grep -i "$pattern" -- ':!*.example' ':!*.md' ':!scripts/check-secrets.sh' 2>/dev/null; then
+        echo "⚠️  Found potential secret pattern: $pattern"
+        found_issues=$((found_issues + 1))
+    fi
+done
+
+if [ $found_issues -gt 0 ]; then
+    echo "❌ Found $found_issues potential security issues!"
+    exit 1
+else
+    echo "✅ No obvious secrets found in code."
+fi
+EOF
+
+chmod +x scripts/check-secrets.sh
+
+# Create git pre-commit hook if .git exists
+if [ -d ".git" ]; then
+    mkdir -p .git/hooks
+    cat > .git/hooks/pre-commit << 'EOF'
+#!/bin/bash
+
+if [ -f scripts/check-secrets.sh ]; then
+    bash scripts/check-secrets.sh
+    if [ $? -ne 0 ]; then
+        echo "❌ Commit blocked due to potential secrets."
+        exit 1
+    fi
+fi
+
+echo "✅ Pre-commit checks passed"
+EOF
+    chmod +x .git/hooks/pre-commit
+fi
+
+# Step 12: Update package.json with scripts - FIXED JSON syntax
+echo ""
+echo "📝 Step 12: Updating package.json with additional scripts..."
+
+# Update package.json with all scripts
+cat > temp_package.json << 'TEMP_PACKAGE_EOF'
+{
+  "name": "saas-website-builder",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "setup:codespaces": "bash scripts/codespaces-setup.sh",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:push": "supabase db push",
+    "stripe:login": "stripe login",
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe",
+    "check:secrets": "bash scripts/check-secrets.sh"
+  }
+}
+TEMP_PACKAGE_EOF
+
+# Get the dependencies and devDependencies from current package.json
+node -e "
+const fs = require('fs');
+const current = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+const temp = JSON.parse(fs.readFileSync('temp_package.json', 'utf8'));
+const final = {
+  ...temp,
+  dependencies: current.dependencies,
+  devDependencies: current.devDependencies
+};
+fs.writeFileSync('package.json', JSON.stringify(final, null, 2));
+"
+
+rm temp_package.json
+
+# Create Codespaces setup script
+cat > scripts/codespaces-setup.sh << 'EOF'
+#!/bin/bash
+
+echo "Updating environment variables for Codespaces..."
+
+if [ -f ".env.local" ]; then
+    CODESPACES_URL="https://${CODESPACE_NAME}-3000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+    
+    sed -i "s|NEXT_PUBLIC_APP_URL=.*|NEXT_PUBLIC_APP_URL=${CODESPACES_URL}|" .env.local
+    sed -i "s|NEXT_PUBLIC_ROOT_DOMAIN=.*|NEXT_PUBLIC_ROOT_DOMAIN=${CODESPACE_NAME}-3000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}|" .env.local
+    
+    echo "✅ Environment variables updated for Codespaces"
+    echo "🌐 Your app will be available at: ${CODESPACES_URL}"
+else
+    echo "⚠️  .env.local not found. Please create it from .env.example first."
+fi
+EOF
+
+chmod +x scripts/codespaces-setup.sh
+
+# Create main README with Codespaces instructions
+echo ""
+echo "📚 Creating documentation..."
+
+cat > README.md << 'EOF'
+# SAAS Website Builder
+
+A modern multi-tenant website builder with AI-powered content generation, industry-specific templates, and seamless deployment.
+
+## 🚀 Quick Start
+
+### In GitHub Codespaces
+1. Open this repository in Codespaces
+2. Run the setup script: `./setup-root.sh` (or `bash setup-root.sh`)
+3. Update `.env.local` with your API keys
+4. Start development: `npm run dev`
+5. **Important**: When the server starts:
+   - Look for the "Ports" tab at the bottom of VS Code
+   - Find port 3000 (or 3001)
+   - Click the globe icon to open in browser (this uses the correct Codespaces URL)
+   - Or use the forwarded URL shown in the Ports tab
+
+### Local Development
+1. Clone the repository
+2. Run: `npm install`
+3. Copy `.env.example` to `.env.local` and add your keys
+4. Run: `npm run dev`
+
+## 🔑 Required API Keys
+
+You'll need:
+- **Supabase**: [Get your keys](https://supabase.com)
+- **Stripe**: [Get your keys](https://stripe.com)
+- **OpenAI**: [Get your API key](https://openai.com)
+
+## 📁 Project Structure
+
+```
+├── app/              # Next.js app directory
+│   ├── admin/        # Admin panel
+│   ├── api/          # API routes
+│   ├── [domain]/     # Dynamic tenant routing
+│   └── preview/      # Preview sites
+├── components/       # React components
+├── lib/              # Utilities and clients
+├── supabase/         # Database schema
+└── public/           # Static assets
+```
+
+## 🛠️ Features
+
+- **Multi-tenant Architecture**: Subdomain-based routing
+- **AI Content Generation**: OpenAI-powered copywriting
+- **Industry Templates**: Pre-built designs for different businesses
+- **Preview System**: Instant website previews for clients
+- **Stripe Integration**: Subscription billing
+- **Admin Dashboard**: Manage all sites from one place
+
+## 🔒 Security
+
+- Environment variables for all secrets
+- Pre-commit hooks to check for exposed keys
+- Row-level security in Supabase
+- Secure webhook handling
+
+## 📚 Documentation
+
+- [Security Checklist](SECURITY_CHECKLIST.md)
+- [Codespaces Setup](scripts/codespaces-setup.sh)
+- [Environment Variables](.env.example)
+
+## 🚀 Deployment
+
+1. Deploy to Vercel
+2. Set environment variables
+3. Configure Supabase
+4. Set up Stripe webhooks
+5. Configure custom domains
+
+## 📝 License
+
+MIT License - feel free to use this for your own projects!
+EOF
+
+# Update the home page to something better
+cat > app/page.tsx << 'HOME_EOF'
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { Sparkles, Eye, Rocket, Shield } from 'lucide-react';
+
+export default function Home() {
+  const router = useRouter();
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="container mx-auto px-6 py-12">
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+            SAAS Website Builder
+          </h1>
+          <p className="text-xl text-gray-600 mb-8">
+            Build beautiful, AI-powered websites for your clients in minutes
+          </p>
+          <button
+            onClick={() => router.push('/admin/preview')}
+            className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors inline-flex items-center"
+          >
+            <Sparkles className="w-5 h-5 mr-2" />
+            Go to Admin Preview Tool
+          </button>
+        </div>
+
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+              <Sparkles className="w-6 h-6 text-blue-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              AI-Powered Content
+            </h3>
+            <p className="text-gray-600">
+              Generate professional website content with AI tailored to each industry
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+              <Eye className="w-6 h-6 text-green-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Instant Previews
+            </h3>
+            <p className="text-gray-600">
+              Show clients a working preview of their website in seconds
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+              <Rocket className="w-6 h-6 text-purple-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Quick Deployment
+            </h3>
+            <p className="text-gray-600">
+              Deploy to custom domains with automatic SSL and CDN
+            </p>
+          </div>
+        </div>
+
+        {/* Setup Status */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+            Setup Status
+          </h2>
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <Shield className="w-5 h-5 text-green-500 mr-3" />
+              <span className="text-gray-700">Project initialized successfully</span>
+            </div>
+            <div className="flex items-center">
+              <Shield className="w-5 h-5 text-yellow-500 mr-3" />
+              <span className="text-gray-700">Remember to add your API keys to .env.local</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+HOME_EOF
+
+# Install dependencies to ensure node_modules exists
+echo ""
+echo "📦 Installing all dependencies to ensure node_modules exists..."
+npm install
+
+# Final success message with Codespaces-specific instructions
+echo ""
+echo "✅ ✅ ✅ SETUP COMPLETE! ✅ ✅ ✅"
+echo ""
+echo "📋 Next Steps:"
+echo "1. Update .env.local with your API keys:"
+echo "   - Supabase URL and keys"
+echo "   - Stripe keys"
+echo "   - OpenAI API key"
+echo ""
+echo "2. Initialize Supabase (optional for local dev):"
+echo "   supabase init"
+echo "   supabase start"
+echo ""
+echo "3. Start the development server:"
+echo "   npm run dev"
+echo ""
+if [ -n "$CODESPACE_NAME" ]; then
+    echo "4. IMPORTANT: Access your app through Codespaces:"
+    echo "   - Look for the 'Ports' tab at the bottom"
+    echo "   - Find port 3000 (or 3001 if 3000 is taken)"
+    echo "   - Click the globe icon to open in browser"
+    echo "   - This will use the proper Codespaces URL"
+    echo ""
+    echo "   Direct URLs:"
+    echo "   Admin Panel: https://${CODESPACE_NAME}-3000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}/admin/preview"
+    echo "   Main App: https://${CODESPACE_NAME}-3000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+else
+    echo "4. Access your app:"
+    echo "   Admin Panel: http://localhost:3000/admin/preview"
+    echo "   Main App: http://localhost:3000"
+fi
+echo ""
+echo "🎉 Happy building!"

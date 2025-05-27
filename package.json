@@ -1,0 +1,47 @@
+{
+  "name": "saas-website-builder",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "setup:codespaces": "bash scripts/codespaces-setup.sh",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:push": "supabase db push",
+    "stripe:login": "stripe login",
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe",
+    "check:secrets": "bash scripts/check-secrets.sh"
+  },
+  "dependencies": {
+    "@stripe/stripe-js": "^7.3.0",
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.49.8",
+    "@tiptap/react": "^2.12.0",
+    "@tiptap/starter-kit": "^2.12.0",
+    "@vercel/analytics": "^1.5.0",
+    "framer-motion": "^12.14.0",
+    "lucide-react": "^0.511.0",
+    "next": "^15.3.2",
+    "openai": "^4.103.0",
+    "react": "^19.1.0",
+    "react-colorful": "^5.6.1",
+    "react-dom": "^19.1.0",
+    "react-hot-toast": "^2.5.2",
+    "stripe": "^18.1.1",
+    "zustand": "^5.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "@types/react": "^19.1.5",
+    "@types/react-dom": "^19.1.5",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.27.0",
+    "eslint-config-next": "^15.4.0-canary.51",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3"
+  }
+}
