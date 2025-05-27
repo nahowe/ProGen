@@ -29,7 +29,7 @@ const AdminPreviewTool = () => {
     { value: 'law_firm', label: 'Law Firm', icon: '⚖️' },
     { value: 'fitness', label: 'Fitness/Gym', icon: '💪' },
     { value: 'salon', label: 'Beauty Salon', icon: '💇‍♀️' },
-    { value: 'auto_repair', label: 'Auto Repair', icon: '🚗' },
+    { value: 'dietitian', label: 'Dietitian/Nutrition', icon: '🥗' },
     { value: 'medical', label: 'Medical Clinic', icon: '🏥' },
     { value: 'accounting', label: 'Accounting', icon: '📊' },
     { value: 'photography', label: 'Photography', icon: '📸' }
@@ -42,7 +42,7 @@ const AdminPreviewTool = () => {
     law_firm: { primary: '#1A237E', accent: '#283593' },
     fitness: { primary: '#FF6B35', accent: '#F7931E' },
     salon: { primary: '#E91E63', accent: '#F06292' },
-    auto_repair: { primary: '#424242', accent: '#FF9800' },
+    dietitian: { primary: '#4CAF50', accent: '#8BC34A' },
     medical: { primary: '#0288D1', accent: '#03A9F4' },
     accounting: { primary: '#00695C', accent: '#00897B' },
     photography: { primary: '#5E35B1', accent: '#7E57C2' }
@@ -71,6 +71,18 @@ const AdminPreviewTool = () => {
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     const industryContent = {
+      dietitian: {
+        tagline: "Nourish Your Body, Transform Your Life",
+        description: "Expert nutrition guidance tailored to your unique needs. We help you build sustainable, healthy eating habits that support your wellness goals and lifestyle.",
+        services: [
+          "Personalized Meal Planning",
+          "Weight Management Programs",
+          "Sports Nutrition Counseling",
+          "Medical Nutrition Therapy",
+          "Group Nutrition Workshops",
+          "Virtual Consultations"
+        ]
+      },
       dentist: {
         tagline: "Your Smile, Our Passion",
         description: "Experience exceptional dental care in a comfortable, modern environment. Our team of skilled professionals is dedicated to helping you achieve optimal oral health.",
