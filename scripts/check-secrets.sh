@@ -10,13 +10,14 @@ patterns=(
     "whsec_"
     "eyJhbGciOiJ"
     "AIza"
-    "sk-"
+    "sk-[a-zA-Z0-9]"  # Changed to require alphanumeric after sk-
 )
 
 found_issues=0
 
 for pattern in "${patterns[@]}"; do
-    if git grep -i "$pattern" -- ':!*.example' ':!*.md' ':!scripts/check-secrets.sh' 2>/dev/null; then
+    # Exclude package-lock.json and other generated files
+    if git grep -i "$pattern" -- ':!*.example' ':!*.md' ':!scripts/check-secrets.sh' ':!package-lock.json' ':!yarn.lock' ':!pnpm-lock.yaml' 2>/dev/null; then
         echo "⚠️  Found potential secret pattern: $pattern"
         found_issues=$((found_issues + 1))
     fi

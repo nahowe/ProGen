@@ -178,3 +178,7 @@ backup-exports/
 !README.md
 !.env.example
 !.env.local.example
+
+setup-root.sh
+*.sh
+/setup-root.sh
