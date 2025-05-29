@@ -166,9 +166,34 @@ const AdminPreviewTool = () => {
   };
 
   const savePreview = async () => {
-    // Here you would save to Supabase
-    console.log('Saving preview data:', previewData);
-    alert('Preview saved! This would save to Supabase in production.');
+    try {
+      const response = await fetch("/api/preview/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(previewData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create preview");
+      }
+
+      const { previewToken, previewUrl } = await response.json();
+      
+      // Update the preview URL with the actual path
+      const fullUrl = window.location.origin + previewUrl;
+      setPreviewUrl(fullUrl);
+      
+      // Show success message
+      alert(`Preview created successfully!\n\nView it at: ${fullUrl}`);
+      
+      // Optionally open in new tab
+      window.open(fullUrl, "_blank");
+    } catch (error) {
+      console.error("Error saving preview:", error);
+      alert("Failed to save preview. Please try again.");
+    }
   };
 
   return (
