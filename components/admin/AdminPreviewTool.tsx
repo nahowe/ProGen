@@ -64,100 +64,88 @@ const AdminPreviewTool = () => {
   ];
 
   // Mock AI content generation
+  // AI content generation with OpenAI
+  // AI content generation with OpenAI
   const generateAIContent = async () => {
     setIsGenerating(true);
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // Call the AI API
+      const response = await fetch('/api/ai/generate-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          businessName: previewData.businessName,
+          industry: previewData.industry,
+        }),
+      });
 
-    const industryContent = {
-      dietitian: {
-        tagline: "Nourish Your Body, Transform Your Life",
-        description: "Expert nutrition guidance tailored to your unique needs. We help you build sustainable, healthy eating habits that support your wellness goals and lifestyle.",
-        services: [
-          "Personalized Meal Planning",
-          "Weight Management Programs",
-          "Sports Nutrition Counseling",
-          "Medical Nutrition Therapy",
-          "Group Nutrition Workshops",
-          "Virtual Consultations"
-        ]
-      },
-      dentist: {
-        tagline: "Your Smile, Our Passion",
-        description: "Experience exceptional dental care in a comfortable, modern environment. Our team of skilled professionals is dedicated to helping you achieve optimal oral health.",
-        services: [
-          "General Dentistry",
-          "Cosmetic Dentistry", 
-          "Orthodontics",
-          "Oral Surgery",
-          "Teeth Whitening",
-          "Dental Implants"
-        ]
-      },
-      real_estate: {
-        tagline: "Finding Your Dream Home",
-        description: "Your trusted partner in real estate. We combine local expertise with cutting-edge technology to help you buy, sell, or invest in properties with confidence.",
-        services: [
-          "Residential Sales",
-          "Commercial Properties",
-          "Property Management",
-          "Investment Consulting",
-          "Market Analysis",
-          "Home Staging"
-        ]
-      },
-      restaurant: {
-        tagline: "Where Flavor Meets Tradition",
-        description: "Discover an unforgettable dining experience. Our chef-crafted menu features fresh, locally-sourced ingredients prepared with passion and served with pride.",
-        services: [
-          "Dine-In Service",
-          "Takeout & Delivery",
-          "Private Events",
-          "Catering Services",
-          "Wine Pairing",
-          "Chef's Table"
-        ]
-      },
-      law_firm: {
-        tagline: "Justice Through Excellence",
-        description: "Dedicated legal professionals committed to protecting your rights and interests. We provide comprehensive legal services with integrity and expertise.",
-        services: [
-          "Corporate Law",
-          "Family Law",
-          "Criminal Defense",
-          "Estate Planning",
-          "Personal Injury",
-          "Employment Law"
-        ]
-      },
-      fitness: {
-        tagline: "Transform Your Body, Transform Your Life",
-        description: "State-of-the-art fitness facility offering personalized training, group classes, and cutting-edge equipment to help you reach your health and fitness goals.",
-        services: [
-          "Personal Training",
-          "Group Fitness Classes",
-          "Nutritional Counseling",
-          "Yoga & Pilates",
-          "Strength Training",
-          "Cardio Programs"
-        ]
+      if (!response.ok) {
+        throw new Error('Failed to generate content');
       }
-    };
 
-    const content = industryContent[previewData.industry] || industryContent.dentist;
-    
-    setGeneratedContent(content);
-    setPreviewData(prev => ({
-      ...prev,
-      tagline: content.tagline,
-      description: content.description,
-      services: content.services
-    }));
+      const aiContent = await response.json();
+      
+      setGeneratedContent(aiContent);
+      setPreviewData(prev => ({
+        ...prev,
+        tagline: aiContent.tagline,
+        description: aiContent.description,
+        services: aiContent.services
+      }));
 
-    // Generate preview URL
-    const subdomain = previewData.businessName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    setPreviewUrl(`https://${subdomain}-preview.yourdomain.com`);
+      // Generate preview URL
+      const subdomain = previewData.businessName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      setPreviewUrl(`https://${subdomain}-preview.yourdomain.com`);
+
+    } catch (error) {
+      console.error('Error generating content:', error);
+      
+      // Fallback to mock content if API fails
+      const industryContent = {
+        dietitian: {
+          tagline: "Nourish Your Body, Transform Your Life",
+          description: "Expert nutrition guidance tailored to your unique needs. We help you build sustainable, healthy eating habits that support your wellness goals and lifestyle.",
+          services: [
+            "Personalized Meal Planning",
+            "Weight Management Programs",
+            "Sports Nutrition Counseling",
+            "Medical Nutrition Therapy",
+            "Group Nutrition Workshops",
+            "Virtual Consultations"
+          ]
+        },
+        dentist: {
+          tagline: "Your Smile, Our Passion",
+          description: "Experience exceptional dental care in a comfortable, modern environment. Our team of skilled professionals is dedicated to helping you achieve optimal oral health.",
+          services: [
+            "General Dentistry",
+            "Cosmetic Dentistry", 
+            "Orthodontics",
+            "Oral Surgery",
+            "Teeth Whitening",
+            "Dental Implants"
+          ]
+        },
+        // Add other industries as needed...
+      };
+
+      const fallbackContent = industryContent[previewData.industry] || industryContent.dietitian;
+      
+      setGeneratedContent(fallbackContent);
+      setPreviewData(prev => ({
+        ...prev,
+        tagline: fallbackContent.tagline,
+        description: fallbackContent.description,
+        services: fallbackContent.services
+      }));
+
+      // Generate preview URL
+      const subdomain = previewData.businessName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      setPreviewUrl(`https://${subdomain}-preview.yourdomain.com`);
+    }
 
     setIsGenerating(false);
   };
